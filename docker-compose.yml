@@ -1,0 +1,24 @@
+﻿# Docker Compose dosya yapısının servis tanımlama bloğu
+services:
+
+  # Docker üzerinde ayağa kaldıracağımız servisin adı (biz mosquitto dedik)
+  mosquitto:
+  
+    # Docker Hub'dan çekilecek resmi MQTT Broker imajı ve sürümü (v2.x sürümü)
+    image: eclipse-mosquitto:2
+    
+    # Docker Desktop üzerinde görünecek olan konteyner (container) adı
+    container_name: smartcity-mqtt
+    
+    # Port yönlendirmeleri: "Dış_Dünya_Portu:Konteyner_İçindeki_Port"
+    ports:
+      # Bilgisayarımızdaki 1883 portuna gelen istekleri, Docker içindeki Mosquitto'nun 1883 portuna iletir.
+      # (1883, standart şifresiz MQTT haberleşme portudur)
+      - "1883:1883"
+      
+    # Dosya bağlama (Volume) işlemleri: "Bilgisayardaki_Dosya:Konteyner_İçindeki_Dosya"
+    volumes:
+      # Bilgisayarımızda (aynı klasörde) oluşturduğumuz 'mosquitto.conf' ayar dosyasını,
+      # Docker konteynerinin içindeki Mosquitto'nun kendi ayar klasörüne bağlar.
+      # Böylece yaptığımız tüm konfigürasyon değişiklikleri Docker içinde de geçerli olur.
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
