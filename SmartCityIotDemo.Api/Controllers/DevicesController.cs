@@ -58,4 +58,53 @@ public class DevicesController : ControllerBase
 
         return Ok(data);
     }
+
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboard()
+    {
+        var devices = await _dbContext.Devices
+            .AsNoTracking()
+            .OrderBy(x => x.DeviceCode)
+            .ToListAsync();
+
+        var deviceCodes = devices
+            .Select(x => x.DeviceCode)
+            .ToList();
+
+        var telemetryData = await _dbContext.TelemetryData
+            .AsNoTracking()
+            .Where(x => deviceCodes.Contains(x.DeviceCode))
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
+        var latestTelemetryByDevice = telemetryData
+            .GroupBy(x => x.DeviceCode)
+            .ToDictionary(
+                group => group.Key,
+                group => group.First());
+
+        var result = devices.Select(device =>
+        {
+            latestTelemetryByDevice.TryGetValue(
+                device.DeviceCode,
+                out var latestTelemetry);
+
+            return new DeviceDashboardDto
+            {
+                DeviceCode = device.DeviceCode,
+                Name = device.Name,
+                Location = device.Location,
+                IsOnline = device.IsOnline,
+                LastSeenAt = device.LastSeenAt,
+
+                Temperature = latestTelemetry?.Temperature,
+                Humidity = latestTelemetry?.Humidity,
+                BatteryLevel = latestTelemetry?.BatteryLevel,
+                SignalStrength = latestTelemetry?.SignalStrength,
+                TelemetryCreatedAt = latestTelemetry?.CreatedAt
+            };
+        });
+
+        return Ok(result);
+    }
 }
