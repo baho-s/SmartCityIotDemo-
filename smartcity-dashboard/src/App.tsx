@@ -4,12 +4,14 @@ import { getDashboardDevices } from "./services/deviceService";
 import { createTelemetryConnection } from "./services/signalRService";
 
 import type {
+    AlarmMessage,
     DeviceDashboard,
     TelemetryMessage,
 } from "./types/device";
 
 function App() {
     const [devices, setDevices] = useState<DeviceDashboard[]>([]);
+    const [alarms, setAlarms] = useState<AlarmMessage[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -18,12 +20,12 @@ function App() {
 
         async function initializeDashboard() {
             try {
-                // İlk açılışta mevcut verileri API'den al.
+                // Sayfa ilk açıldığında mevcut cihaz verilerini API'den al.
                 const data = await getDashboardDevices();
 
                 setDevices(data);
 
-                // Backend'den gelecek canlı telemetry verisini dinle.
+                // Backend'den gelen anlık telemetry verilerini dinle.
                 connection.on(
                     "TelemetryReceived",
                     (telemetry: TelemetryMessage) => {
@@ -34,6 +36,8 @@ function App() {
 
                         setDevices((currentDevices) =>
                             currentDevices.map((device) => {
+                                // Gelen telemetry bu cihaza ait değilse
+                                // mevcut cihazı değiştirmeden geri döndür.
                                 if (
                                     device.deviceCode !==
                                     telemetry.deviceCode
@@ -41,6 +45,9 @@ function App() {
                                     return device;
                                 }
 
+                                // Gelen telemetry ilgili cihaza aitse
+                                // mevcut cihaz bilgilerini koruyup
+                                // sadece güncel telemetry alanlarını değiştir.
                                 return {
                                     ...device,
 
@@ -69,6 +76,24 @@ function App() {
                     }
                 );
 
+                // Backend'den gelen alarm eventlerini dinle.
+                connection.on(
+                    "AlarmRaised",
+                    (alarm: AlarmMessage) => {
+                        console.log(
+                            "Yeni alarm geldi:",
+                            alarm
+                        );
+
+                        // Yeni alarmı listenin başına ekle.
+                        setAlarms((currentAlarms) => [
+                            alarm,
+                            ...currentAlarms,
+                        ]);
+                    }
+                );
+
+                // SignalR bağlantısını başlat.
                 await connection.start();
 
                 console.log(
@@ -87,6 +112,7 @@ function App() {
 
         initializeDashboard();
 
+        // Component kapatıldığında SignalR bağlantısını temizle.
         return () => {
             connection.stop();
         };
@@ -104,48 +130,93 @@ function App() {
         <main>
             <h1>Smart City IoT Dashboard</h1>
 
-            {devices.map((device) => (
-                <div key={device.deviceCode}>
-                    <h2>{device.name}</h2>
+            <section>
+                <h2>Cihazlar</h2>
 
-                    <p>
-                        Durum:
-                        {device.isOnline
-                            ? " Online"
-                            : " Offline"}
-                    </p>
+                {devices.map((device) => (
+                    <div key={device.deviceCode}>
+                        <h3>{device.name}</h3>
 
-                    <p>Cihaz: {device.deviceCode}</p>
+                        <p>
+                            Durum:
+                            {device.isOnline
+                                ? " Online"
+                                : " Offline"}
+                        </p>
 
-                    <p>Konum: {device.location}</p>
+                        <p>
+                            Cihaz: {device.deviceCode}
+                        </p>
 
-                    <p>
-                        Sıcaklık:
-                        {" "}
-                        {device.temperature ?? "-"} °C
-                    </p>
+                        <p>
+                            Konum: {device.location}
+                        </p>
 
-                    <p>
-                        Nem:
-                        {" "}
-                        {device.humidity ?? "-"} %
-                    </p>
+                        <p>
+                            Sıcaklık:{" "}
+                            {device.temperature ?? "-"} °C
+                        </p>
 
-                    <p>
-                        Batarya:
-                        {" "}
-                        {device.batteryLevel ?? "-"} %
-                    </p>
+                        <p>
+                            Nem:{" "}
+                            {device.humidity ?? "-"} %
+                        </p>
 
-                    <p>
-                        Sinyal:
-                        {" "}
-                        {device.signalStrength ?? "-"} dBm
-                    </p>
+                        <p>
+                            Batarya:{" "}
+                            {device.batteryLevel ?? "-"} %
+                        </p>
 
-                    <hr />
-                </div>
-            ))}
+                        <p>
+                            Sinyal:{" "}
+                            {device.signalStrength ?? "-"} dBm
+                        </p>
+
+                        <hr />
+                    </div>
+                ))}
+            </section>
+
+            <section>
+                <h2>Alarmlar</h2>
+
+                {alarms.length === 0 ? (
+                    <p>Henüz alarm oluşmadı.</p>
+                ) : (
+                    alarms.map((alarm, index) => (
+                        <div
+                            key={`${alarm.deviceCode}-${alarm.createdAt}-${index}`}
+                        >
+                            <strong>
+                                {alarm.deviceCode}
+                            </strong>
+
+                            <p>
+                                Alarm: {alarm.alarmType}
+                            </p>
+
+                            <p>
+                                Sıcaklık:{" "}
+                                {alarm.temperature} °C
+                            </p>
+
+                            <p>
+                                Batarya:{" "}
+                                %{alarm.batteryLevel}
+                            </p>
+
+                            <p>
+                                Tarih:{" "}
+                                {new Date(
+                                    alarm.createdAt
+                                ).toLocaleString()}
+                            </p>
+
+                            <hr />
+                        </div>
+                    ))
+                )}
+            </section>
         </main>
     );
 }

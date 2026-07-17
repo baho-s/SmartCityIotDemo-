@@ -24,9 +24,9 @@ export interface TelemetryMessage {
 
 export interface AlarmMessage {
     deviceCode: string;
-    type: string;
-    message?: string;
-    temperature?: number;
-    batteryLevel?: number;
+    alarmType: string;
+    temperature: number;
+    batteryLevel: number;
     createdAt: string;
 }
+
