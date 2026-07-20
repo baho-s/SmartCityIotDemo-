@@ -27,6 +27,8 @@ builder.Services.AddSignalR();
 // Arka Plan Görevi (MQTT Telemetry Listener)
 builder.Services.AddHostedService<MqttTelemetryWorker>();
 
+builder.Services.AddHostedService<DeviceStatusWorker>();
+
 // React Frontend Entegrasyonu (CORS Politikasý)
 builder.Services.AddCors(options =>
 {
