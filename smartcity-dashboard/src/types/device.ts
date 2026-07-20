@@ -30,3 +30,8 @@ export interface AlarmMessage {
     createdAt: string;
 }
 
+export interface DeviceStatusMessage {
+    deviceCode: string;
+    isOnline: boolean;
+    lastSeenAt: string;
+}

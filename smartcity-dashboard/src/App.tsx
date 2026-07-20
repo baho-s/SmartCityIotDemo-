@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
+import "./App.css";
 
 import { getDashboardDevices } from "./services/deviceService";
 import { createTelemetryConnection } from "./services/signalRService";
+import DashboardHeader from "./components/DashboardHeader";
+import DeviceCard from "./components/DeviceCard";
+import AlarmCard from "./components/AlarmCard";
 
 import type {
     AlarmMessage,
     DeviceDashboard,
-    TelemetryMessage,
+    DeviceStatusMessage,
+    TelemetryMessage
 } from "./types/device";
 
 function App() {
@@ -14,6 +19,7 @@ function App() {
     const [alarms, setAlarms] = useState<AlarmMessage[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
 
     useEffect(() => {
         const connection = createTelemetryConnection();
@@ -93,6 +99,33 @@ function App() {
                     }
                 );
 
+                // Backend'den gelen cihaz durum değişikliği eventini dinle.
+                connection.on(
+                    "DeviceStatusChanged",
+                    (status: DeviceStatusMessage) => {
+                        console.log("Cihaz durumu değişti:", status);
+
+                        setDevices((currentDevices) =>
+                            currentDevices.map((device) => {
+                                // Bu event başka bir cihaza aitse
+                                // hiçbir değişiklik yapmadan geri döndür.
+                                if (device.deviceCode !== status.deviceCode) {
+                                    return device;
+                                }
+
+                                // Event bu cihaza aitse
+                                // yeni bir nesne oluştur ve sadece
+                                // değişen alanları güncelle.
+                                return {
+                                    ...device,
+                                    isOnline: status.isOnline,
+                                    lastSeenAt: status.lastSeenAt,
+                                };
+                            })
+                        );
+                    }
+                );
+
                 // SignalR bağlantısını başlat.
                 await connection.start();
 
@@ -119,105 +152,50 @@ function App() {
     }, []);
 
     if (isLoading) {
-        return <p>Yükleniyor...</p>;
+        return (
+            <div className="app-container">
+                <div className="loading">Yükleniyor...</div>
+            </div>
+        );
     }
 
     if (error) {
-        return <p>{error}</p>;
+        return (
+            <div className="app-container">
+                <div className="loading" style={{ color: "#EF4444" }}>{error}</div>
+            </div>
+        );
     }
 
     return (
-        <main>
-            <h1>Smart City IoT Dashboard</h1>
+        <div className="app-container">
+            <DashboardHeader />
 
-            <section>
-                <h2>Cihazlar</h2>
-
-                {devices.map((device) => (
-                    <div key={device.deviceCode}>
-                        <h3>{device.name}</h3>
-
-                        <p>
-                            Durum:
-                            {device.isOnline
-                                ? " Online"
-                                : " Offline"}
-                        </p>
-
-                        <p>
-                            Cihaz: {device.deviceCode}
-                        </p>
-
-                        <p>
-                            Konum: {device.location}
-                        </p>
-
-                        <p>
-                            Sıcaklık:{" "}
-                            {device.temperature ?? "-"} °C
-                        </p>
-
-                        <p>
-                            Nem:{" "}
-                            {device.humidity ?? "-"} %
-                        </p>
-
-                        <p>
-                            Batarya:{" "}
-                            {device.batteryLevel ?? "-"} %
-                        </p>
-
-                        <p>
-                            Sinyal:{" "}
-                            {device.signalStrength ?? "-"} dBm
-                        </p>
-
-                        <hr />
-                    </div>
-                ))}
+            <section className="devices-section">
+                <div className="devices-grid">
+                    {devices.map((device) => (
+                        <DeviceCard key={device.deviceCode} device={device} />
+                    ))}
+                </div>
             </section>
 
-            <section>
-                <h2>Alarmlar</h2>
+            <section className="alarms-section">
+                <h2 className="alarms-title">Alarmlar</h2>
 
                 {alarms.length === 0 ? (
-                    <p>Henüz alarm oluşmadı.</p>
+                    <div className="empty-state">Henüz alarm oluşmadı.</div>
                 ) : (
-                    alarms.map((alarm, index) => (
-                        <div
-                            key={`${alarm.deviceCode}-${alarm.createdAt}-${index}`}
-                        >
-                            <strong>
-                                {alarm.deviceCode}
-                            </strong>
-
-                            <p>
-                                Alarm: {alarm.alarmType}
-                            </p>
-
-                            <p>
-                                Sıcaklık:{" "}
-                                {alarm.temperature} °C
-                            </p>
-
-                            <p>
-                                Batarya:{" "}
-                                %{alarm.batteryLevel}
-                            </p>
-
-                            <p>
-                                Tarih:{" "}
-                                {new Date(
-                                    alarm.createdAt
-                                ).toLocaleString()}
-                            </p>
-
-                            <hr />
-                        </div>
-                    ))
+                    <div className="alarms-grid">
+                        {alarms.map((alarm, index) => (
+                            <AlarmCard
+                                key={`${alarm.deviceCode}-${alarm.createdAt}-${index}`}
+                                alarm={alarm}
+                            />
+                        ))}
+                    </div>
                 )}
             </section>
-        </main>
+        </div>
     );
 }
 
