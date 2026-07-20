@@ -198,10 +198,12 @@ body {
   margin: 4px 0;
 }
 
-.alarm-code {
-  font-size: 11px;
+.alarm-details {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
   color: var(--text-secondary);
-  font-family: 'Courier New', monospace;
+  margin-top: 4px;
 }
 
 .loading {

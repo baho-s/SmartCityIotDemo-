@@ -20,7 +20,7 @@ function DeviceCard({ device }: DeviceCardProps) {
   return (
     <div className="device-card">
       <div className="device-card-header">
-        <h3 className="device-name">{device.deviceName}</h3>
+        <h3 className="device-name">{device.name}</h3>
         <div className={`status-indicator ${device.isOnline ? "online" : "offline"}`} />
       </div>
 
