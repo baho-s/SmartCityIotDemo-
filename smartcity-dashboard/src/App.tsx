@@ -35,11 +35,6 @@ function App() {
                 connection.on(
                     "TelemetryReceived",
                     (telemetry: TelemetryMessage) => {
-                        console.log(
-                            "Yeni telemetry geldi:",
-                            telemetry
-                        );
-
                         setDevices((currentDevices) =>
                             currentDevices.map((device) => {
                                 // Gelen telemetry bu cihaza ait değilse
@@ -86,11 +81,6 @@ function App() {
                 connection.on(
                     "AlarmRaised",
                     (alarm: AlarmMessage) => {
-                        console.log(
-                            "Yeni alarm geldi:",
-                            alarm
-                        );
-
                         // Yeni alarmı listenin başına ekle.
                         setAlarms((currentAlarms) => [
                             alarm,
@@ -103,8 +93,6 @@ function App() {
                 connection.on(
                     "DeviceStatusChanged",
                     (status: DeviceStatusMessage) => {
-                        console.log("Cihaz durumu değişti:", status);
-
                         setDevices((currentDevices) =>
                             currentDevices.map((device) => {
                                 // Bu event başka bir cihaza aitse
@@ -129,9 +117,6 @@ function App() {
                 // SignalR bağlantısını başlat.
                 await connection.start();
 
-                console.log(
-                    "SignalR bağlantısı kuruldu."
-                );
             } catch (error) {
                 console.error(error);
 

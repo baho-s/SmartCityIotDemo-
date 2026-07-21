@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 function DashboardHeader() {
   return (
     <div className="dashboard-header">
@@ -7,4 +9,4 @@ function DashboardHeader() {
   );
 }
 
-export default DashboardHeader;
+export default memo(DashboardHeader);

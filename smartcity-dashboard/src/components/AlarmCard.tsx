@@ -1,21 +1,12 @@
+import { memo } from "react";
 import type { AlarmMessage } from "../types/device";
+import { formatDate } from "../utils/dateFormatter";
 
 interface AlarmCardProps {
   alarm: AlarmMessage;
 }
 
 function AlarmCard({ alarm }: AlarmCardProps) {
-  // Formatlanmış tarih göster
-  const formatDate = (date: string | Date) => {
-    const d = new Date(date);
-    return d.toLocaleString("tr-TR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   return (
     <div className="alarm-card">
@@ -34,4 +25,4 @@ function AlarmCard({ alarm }: AlarmCardProps) {
   );
 }
 
-export default AlarmCard;
+export default memo(AlarmCard);
