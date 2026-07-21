@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import type { DeviceDashboard } from "../types/device";
 import { formatDate } from "../utils/dateFormatter";
 
@@ -7,12 +7,35 @@ interface DeviceCardProps {
 }
 
 function DeviceCard({ device }: DeviceCardProps) {
+  // Sensör verileri güncellendiğinde pulse efekti tetikle
+  const [isPulsing, setIsPulsing] = useState(false);
+
+  useEffect(() => {
+    // Canlı veri geldiğinde pulse animasyonunu başlat
+    setIsPulsing(true);
+  }, [
+    // Sensör verilerinin değişimini izle
+    device.temperature,
+    device.humidity,
+    device.batteryLevel,
+    device.signalStrength,
+  ]);
+
+  // Animasyon bittiğinde pulse state'ini kaldır
+  const handleAnimationEnd = () => {
+    setIsPulsing(false);
+  };
 
   return (
     <div className="device-card">
       <div className="device-card-header">
         <h3 className="device-name">{device.name}</h3>
-        <div className={`status-indicator ${device.isOnline ? "online" : "offline"}`} />
+        <div
+          className={`status-indicator ${device.isOnline ? "online" : "offline"} ${
+            isPulsing ? "pulse" : ""
+          }`}
+          onAnimationEnd={handleAnimationEnd}
+        />
       </div>
 
       <p className="device-code">{device.deviceCode}</p>
